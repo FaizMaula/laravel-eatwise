@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
+use App\Models\OtpVerification;
+
 
 
 class AuthController extends Controller
@@ -70,10 +72,13 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        $otp = rand(100000, 999999); // generate 6 digit OTP
+        $otp = rand(1000, 9999);
 
-        // Simpan OTP ke database (buat tabel otps atau tambahkan ke user)
-        User::where('email', $request->email)->update(['otp' => $otp]);
+        // Simpan OTP ke tabel otp_verifications
+        OtpVerification::updateOrCreate(
+            ['email' => $request->email],
+            ['otp' => $otp, 'updated_at' => now()]
+        );
 
         // Kirim ke email
         Mail::raw("Your OTP is: $otp", function ($message) use ($request) {
@@ -83,6 +88,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'OTP sent']);
     }
 
+
     public function verifyOtp(Request $request)
     {
         $request->validate([
@@ -90,14 +96,10 @@ class AuthController extends Controller
             'otp' => 'required'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $otpData = OtpVerification::where('email', $request->email)->first();
 
-        if ($user && $user->otp == $request->otp) {
-            // kosongkan OTP agar tidak bisa dipakai lagi
-            $user->otp = null;
-            $user->email_verified_at = now();
-            $user->save();
-
+        if ($otpData && $otpData->otp == $request->otp) {
+            $otpData->delete(); 
             return response()->json(['message' => 'OTP verified']);
         }
 
