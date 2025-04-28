@@ -14,6 +14,8 @@ Route::middleware('api')->group(function () {
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/check-email', [AuthController::class, 'checkEmail']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('/check-availability', [AuthController::class, 'checkAvailability']);
+
 
     // User routes
     Route::get('/user', [UserController::class, 'getUserProfile']);
